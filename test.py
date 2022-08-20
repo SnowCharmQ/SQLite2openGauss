@@ -1,7 +1,5 @@
-import time
 import argparse
 import logging
-import sqlite3
 import psycopg2
 
 from properties import Properties
@@ -10,7 +8,6 @@ from connection import OpenGaussConnection, SqliteConnection
 
 
 def main():
-
     logging.basicConfig(filename='database.log',
                         level=logging.DEBUG, filemode='a',
                         format='[%(asctime)s] [%(levelname)s] >>>  %(message)s',
@@ -99,6 +96,20 @@ def main():
         opengauss.putconn(conn_opengauss)
 
     """TODO: 数据迁移操作"""
+    """
+    我的思路：循环遍历从sqlite中dump出的语句，执行到create语句时做一个截断到下一个create语句前停止，
+    可以用一个列表来存储这一段所有的sql语句把这个列表传入OpenGaussThread中（可以另外添加构造器），
+    然后调用线程的start方法执行线程（最后的join是保证执行完所有线程后再执行主线程）
+    """
+    # Demo 示例：
+    sqls = []
+    thread_list = []
+    for i in range(5):
+        t = OpenGaussThread(opengauss, sqls)
+        thread_list.append(t)
+        t.start()
+    for t in thread_list:
+        t.join()
 
 
 if __name__ == '__main__':

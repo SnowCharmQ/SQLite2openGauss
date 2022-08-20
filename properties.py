@@ -1,10 +1,5 @@
 import logging
 
-logging.basicConfig(filename='database.log',
-                    level=logging.DEBUG, filemode='a',
-                    format='[%(asctime)s] [%(levelname)s] >>>  %(message)s',
-                    datefmt='%Y-%m-%d %I:%M:%S')
-
 
 class Properties:
     def __init__(self, file_name: str):

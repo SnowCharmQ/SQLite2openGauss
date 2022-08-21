@@ -46,6 +46,7 @@ class OpenGaussConnection:
                                                         'database.password'],
                                                     host=self.opengauss_properties['database.host'],
                                                     port=self.opengauss_properties['database.port'],
+
                                                     keepalives=1,
                                                     keepalives_idle=30,
                                                     keepalives_interval=10,

@@ -1,11 +1,13 @@
 import logging
 import threading
+import decorator
 import time
 
 from connection import OpenGaussConnection
 
 
 class OpenGaussThread(threading.Thread):
+
 
     def __init__(self, opengauss: OpenGaussConnection, sqls):
         super().__init__()
@@ -16,6 +18,7 @@ class OpenGaussThread(threading.Thread):
         conn = None
         try:
             conn = self.opengauss.getconn()
+            cursor_opengauss=conn.cursor()
             # print(self.name)
             # time.sleep(100) # 测试
             """
@@ -28,8 +31,26 @@ class OpenGaussThread(threading.Thread):
             insert语句优化执行（整段执行等）
             ）
             """
+
+            for sql in self.sqls:
+                if sql.find("CREATE") != -1:
+                    sql=decorator.createWithoutFK(sql)
+                    cursor_opengauss.execute(sql)
+                    print(sql)
+                    print("@@@@@@@@@@@@@@@@@@@@@@")
+                else:
+                    sql=decorator.Insert(sql)
+                    cursor_opengauss.execute(sql)
+                    # print(sql)
+                    # print("----")
+            conn.commit()
+                # print(sql)
+
+
+
         except Exception as e:
             logging.error(e)
         finally:
             if conn is not None:
                 self.opengauss.putconn(conn)
+

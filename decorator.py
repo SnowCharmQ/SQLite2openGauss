@@ -34,11 +34,19 @@ def remove_foreign_key(sql: str):
             sql = try_to_remove(sql, x)
 
 
+
+def not_null(sql):
+    sql=sql.replace(",'',",",' ',")
+    sql = sql.replace("('',", "(' ',")
+    sql = sql.replace(",'')", ",' ')")
+    return sql
+
 def original_processed(func):
     def wrapper(*args,**kwargs):
 
         sql=func(*args,**kwargs)
         sql=convert_datetime_to_date(sql)
+        sql=not_null(sql)
 
         # print("##################")
         return sql

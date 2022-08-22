@@ -42,14 +42,15 @@ class OpenGaussThread(threading.Thread):
                 else:
                     sql = decorator.Insert(sql)
                     cursor_opengauss.execute(sql)
-                    # print(sql)
-                    # print("----")
+                    print(sql)
+                    print("----")
             conn.commit()
             # print(sql)
 
 
 
         except Exception as e:
+            print(e)
             logging.error(e)
         finally:
             if conn is not None:

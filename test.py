@@ -79,8 +79,8 @@ def main():
     conn_opengauss = opengauss.getconn()
     cursor_opengauss = conn_opengauss.cursor()
     try:
-        cursor_opengauss.execute("create schema %s authorization %s;" % (dbname, dbusername))
-        cursor_opengauss.execute("grant usage on schema %s to %s;" % (dbname, dbusername))
+        cursor_opengauss.execute("create schema %s authorization %s;" % (dbschema, dbusername))
+        cursor_opengauss.execute("grant usage on schema %s to %s;" % (dbschema, dbusername))
         conn_opengauss.commit()
         cursor_opengauss.close()
         opengauss.putconn(conn_opengauss)
@@ -108,7 +108,7 @@ def main():
             # print(sql)
             boo = 1
         elif sql.find("CREATE") != -1 and boo == 1:
-            t = OpenGaussThread(opengauss, sqls)
+            t = OpenGaussThread(opengauss, sqls, dbschema)
             thread_list.append(t)
             t.start()
             sqls = []

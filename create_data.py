@@ -13,9 +13,9 @@ except BaseException:
 cursor = conn.cursor()
 
 # 400*500000 will create a 8G sqlite file
-for i in range(400):  # number of tables
+for i in range(100):  # number of tables
     cursor.execute("create table a%s(a varchar,b varchar,c varchar,d varchar);" % i)
-    for j in range(500000):  # number of data in each table
+    for j in range(50):  # number of data in each table
         cursor.execute("insert into a%s values ('abaabaca', 'abaabaca', 'abaabaca','abaabacab');" % i)
 print("Successfully import.")
 

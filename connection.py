@@ -5,7 +5,7 @@ from psycopg2 import pool
 from threading import Semaphore
 
 
-class OpenGaussConnectionPool(pool.ThreadedConnectionPool):
+class OpenGaussConnectionPool(pool.AbstractConnectionPool):
     def __init__(self, minconn, maxconn, *args, **kwargs):
         self.semaphore = Semaphore(maxconn)
         self.maxconn = maxconn
@@ -15,10 +15,10 @@ class OpenGaussConnectionPool(pool.ThreadedConnectionPool):
     def getconn(self, key=None):
         self.semaphore.acquire()
         self.current += 1
-        return super().getconn(key)
+        return self._getconn(key)
 
     def putconn(self, *args, **kwargs):
-        super().putconn(*args, **kwargs)
+        self._putconn(*args, **kwargs)
         self.semaphore.release()
         self.current -= 1
 
@@ -46,7 +46,7 @@ class OpenGaussConnection:
                                                         'database.password'],
                                                     host=self.opengauss_properties['database.host'],
                                                     port=self.opengauss_properties['database.port'],
-
+                                                    options='-c search_path=public',
                                                     keepalives=1,
                                                     keepalives_idle=30,
                                                     keepalives_interval=10,

@@ -1,0 +1,21 @@
+test_faster 每100个启动一个线程
+time cost 8.060772895812988 s
+
+test_faster 每200个启动一个线程
+time cost 8.633768320083618 s
+
+test_faster 每400个启动一个线程
+time cost 9.812771320343018 s
+
+test_faster 每10个启动一个线程
+time cost 23.20992422103882 s
+
+test_faster 每50个启动一个线程
+time cost 10.727640628814697 s
+
+test_faster 1000个启动一个线程
+time cost 9.18506121635437 s
+
+
+test
+time cost 60.778950691223145 s

@@ -1,8 +1,9 @@
 import argparse
 import logging
 import psycopg2
-import time
 import decorator
+import time
+
 from properties import Properties
 from opengauss_thread import OpenGaussThread
 from connection import OpenGaussConnection, SqliteConnection
@@ -87,7 +88,7 @@ def main():
         opengauss.putconn(conn_opengauss)
     except psycopg2.errors.DuplicateSchema as e:
         logging.error(e)
-        print("schema '%s' already exists" % dbname)
+        print("schema '%s' already exists" % dbschema)
         cursor_opengauss.close()
         opengauss.putconn(conn_opengauss)
 
@@ -98,29 +99,46 @@ def main():
     然后调用线程的start方法执行线程（最后的join是保证执行完所有线程后再执行主线程）
     """
     # Demo 示例：
+
     time_start = time.time()  # 开始计时
+
+    ##先建立表
+    create_thread=[]
+    cursor_sqlite = conn_sqlite.cursor()
+    all_table = cursor_sqlite.execute("select * from sqlite_master where type = 'table';")
+    create_sqls=[]
+    for row in all_table:
+        s = row[4]
+        s = s.replace('\n', '').replace('\r', '').replace('   ',' ')
+        create_sqls.append(s+";")
+
+    create_t = OpenGaussThread(opengauss, create_sqls, dbschema)
+    create_thread.append(create_t)
+    create_t.start()
+    create_t.join()
+
+
+
+
+
     ##将每个表的create+insert放在不同线程########################################
+    count=0
     sqls = []
     thread_list = []
     create_sqls = []
     boo = 0
     for sql in conn_sqlite.iterdump():
-        if sql.find("CREATE") != -1 and boo == 0:
-            sqls.append(sql)
+        if sql.find("CREATE") != -1:
             create_sqls.append(sql)
-            # print(sql)
-            boo = 1
-        elif sql.find("CREATE") != -1 and boo == 1:
+            continue
+        sqls.append(sql)
+        count=count+1
+        if(count==100):
             t = OpenGaussThread(opengauss, sqls, dbschema)
             thread_list.append(t)
             t.start()
             sqls = []
-            sqls.append(sql)
-            create_sqls.append(sql)
-            # print(sql)
-        elif sql.find("INSERT") != -1:
-            sqls.append(sql)
-            # print(sql)
+            count=0
     t = OpenGaussThread(opengauss, sqls, dbschema)
     thread_list.append(t)
     t.start()
@@ -139,7 +157,7 @@ def main():
     conn_opengauss = opengauss.getconn()
     cursor_opengauss = conn_opengauss.cursor()
     for create_sql in create_sqls:
-        sqls=decorator.alterFK(create_sql)
+        sqls = decorator.alterFK(create_sql)
         for alter_sql in sqls:
             cursor_opengauss.execute(alter_sql)
             # print("alter")
@@ -147,10 +165,12 @@ def main():
     cursor_opengauss.close()
     opengauss.putconn(conn_opengauss)
 
+
     time_end = time.time()  # 结束计时
 
     time_c = time_end - time_start  # 运行所花时间
     print('time cost', time_c, 's')
+
 
 if __name__ == '__main__':
     main()

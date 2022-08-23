@@ -63,15 +63,13 @@ cursor_opengauss.execute("set search_path to %s;" % dbname)
 final_str_list=[]
 
 for row in all_table:
-        s = row[4].split(' ')
-        location=s[2].find('(')
-        if(location!=-1):
-            final_str=s[2][0:location].replace('\n', '').replace('\r', '')
-            final_str_list.append([final_str,0,0])
-        else:
-            final_str = s[2].replace('\n', '').replace('\r', '')
-            final_str_list.append([final_str,0])
-print(len(final_str_list))
+        print(row[4])
+        s = row[4]
+        s=s.replace('\n', '').replace('\r', '')
+        print(s)
+
+
+
 
 length=len(final_str_list)
 origin=sys.stdout

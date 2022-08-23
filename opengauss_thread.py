@@ -37,13 +37,13 @@ class OpenGaussThread(threading.Thread):
                 if sql.find("CREATE") != -1:
                     sql = decorator.createWithoutFK(sql)
                     cursor_opengauss.execute(sql)
-                    print(sql)
-                    print("@@@@@@@@@@@@@@@@@@@@@@")
+                    # print(sql)
+                    # print("@@@@@@@@@@@@@@@@@@@@@@")
                 else:
                     sql = decorator.Insert(sql)
                     cursor_opengauss.execute(sql)
-                    print(sql)
-                    print("----")
+                    # print(sql)
+                    # print("----")
             conn.commit()
             # print(sql)
 

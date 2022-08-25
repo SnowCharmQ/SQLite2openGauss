@@ -3,7 +3,7 @@ import logging
 import psycopg2
 import time
 import decorator
-from properties import Properties
+from prop.properties import Properties
 from opengauss_thread import OpenGaussThread
 from connection import OpenGaussConnection, SqliteConnection
 
@@ -27,7 +27,7 @@ def main():
         p = Properties(opengauss_file)
         opengauss_properties = p.get_properties()
     else:
-        opengauss_file = 'opengauss.properties'
+        opengauss_file = 'prop/opengauss.properties'
     if not opengauss_properties.__contains__('database.name') or opengauss_properties['database.name'] == '':
         opengauss_properties['database.name'] = input("Input the database name of OpenGauss:")
         is_file_update = True
@@ -59,7 +59,7 @@ def main():
         p = Properties(sqlite_file)
         sqlite_properties = p.get_properties()
     else:
-        sqlite_file = 'sqlite.properties'
+        sqlite_file = 'prop/sqlite.properties'
     if not sqlite_properties.__contains__('database.filename'):
         sqlite_properties['database.filename'] = input("Input the filename of Sqlite3:")
         is_file_update = True

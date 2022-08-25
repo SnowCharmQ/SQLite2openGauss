@@ -28,7 +28,7 @@ class OpenGaussConnectionPool(pool.AbstractConnectionPool):
 
 
 class OpenGaussConnection:
-    def __init__(self, opengauss_properties):
+    def __init__(self, opengauss_properties, error_log: logging.Logger, info_log: logging.Logger):
         super().__init__()
         self.pool = None
         self.opengauss_properties = opengauss_properties
@@ -46,13 +46,11 @@ class OpenGaussConnection:
                                                         'database.password'],
                                                     host=self.opengauss_properties['database.host'],
                                                     port=self.opengauss_properties['database.port'],
-                                                    # options='-c search_path=hhh',
-                                                    # dbschema=self.opengauss_properties['database.schema'],
                                                     keepalives=1,
                                                     keepalives_idle=30,
                                                     keepalives_interval=10,
                                                     keepalives_count=15)
-                logging.info(
+                info_log.info(
                     "Successfully Log In OpenGauss Database %s As %s" % (
                         self.opengauss_properties['database.name'], self.opengauss_properties['database.user']))
                 break
@@ -62,7 +60,7 @@ class OpenGaussConnection:
                     print("Fail to connect to OpenGauss database. Retry 1 time")
                 else:
                     print("Fail to connect to OpenGauss database. Retry %d times" % i)
-                logging.error(e)
+                error_log.error(e)
                 ex = e
                 time.sleep(5)
 
@@ -77,7 +75,7 @@ class OpenGaussConnection:
 
 
 class SqliteConnection:
-    def __init__(self, sqlite_properties):
+    def __init__(self, sqlite_properties, error_log: logging.Logger, info_log: logging.Logger):
         i = 0
         ex = None
         while True:
@@ -86,7 +84,7 @@ class SqliteConnection:
                 raise ex
             try:
                 self.conn_sqlite = sqlite3.connect(sqlite_properties['database.filename'])
-                logging.info("Successfully Log In Sqlite3 Database %s" % (sqlite_properties['database.filename']))
+                info_log.info("Successfully Log In Sqlite3 Database %s" % (sqlite_properties['database.filename']))
                 break
             except Exception as e:
                 i += 1
@@ -94,7 +92,7 @@ class SqliteConnection:
                     print("Fail to connect to Sqlite3 database. Retry 1 time")
                 else:
                     print("Fail to connect to Sqlite3 database. Retry %d times" % i)
-                logging.error(e)
+                error_log.error(e)
                 ex = e
                 time.sleep(5)
 

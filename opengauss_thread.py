@@ -1,18 +1,18 @@
 import logging
 import threading
 import decorator
-import time
 
 from connection import OpenGaussConnection
 
 
 class OpenGaussThread(threading.Thread):
 
-    def __init__(self, opengauss: OpenGaussConnection, sqls, dbschema):
+    def __init__(self, opengauss: OpenGaussConnection, sqls, dbschema, error_log: logging.Logger):
         super().__init__()
         self.opengauss = opengauss
         self.sqls = sqls
         self.dbschema = dbschema
+        self.error_log = error_log
 
     def run(self) -> None:
         conn = None
@@ -20,38 +20,49 @@ class OpenGaussThread(threading.Thread):
             conn = self.opengauss.getconn()
             cursor_opengauss = conn.cursor()
             cursor_opengauss.execute("set search_path to %s;" % self.dbschema)
-            # print(self.name)
-            # time.sleep(100) # 测试
-            """
-            TODO: 连接执行每一个表的创建和插入操作
-            我的思路：
-            使用decorator设计模式
-            传入的整段sql语句先对顶上的create语句进行分析（可以做的优化：
-            删除所有外键、主键等（因为可以保证数据的正确性）->可以考虑使用一个类变量存储，在主方法里回收，
-            对不兼容的数据格式进行修改
-            insert语句优化执行（整段执行等）
-            ）
-            """
-
             for sql in self.sqls:
                 if sql.find("CREATE") != -1:
                     sql = decorator.createWithoutFK(sql)
                     cursor_opengauss.execute(sql)
-                    print(sql)
-                    # print("@@@@@@@@@@@@@@@@@@@@@@")
+                elif sql.find("BEGIN TRANSACTION;") != -1:
+                    continue
                 else:
                     sql = decorator.Insert(sql)
                     cursor_opengauss.execute(sql)
-                    print(sql)
-                    # print("----")
             conn.commit()
-            # print(sql)
-
-
-
         except Exception as e:
-            print(e)
-            logging.error(e)
+            self.error_log.error(e)
+        finally:
+            if conn is not None:
+                self.opengauss.putconn(conn)
+
+
+class OpenGaussLogThread(OpenGaussThread):
+
+    def __init__(self, opengauss: OpenGaussConnection, sqls, dbschema, error_log: logging.Logger,
+                 sqls_log: logging.Logger):
+        super().__init__(opengauss, sqls, dbschema, error_log)
+        self.sqls_log = sqls_log
+
+    def run(self) -> None:
+        conn = None
+        try:
+            conn = self.opengauss.getconn()
+            cursor_opengauss = conn.cursor()
+            cursor_opengauss.execute("set search_path to %s;" % self.dbschema)
+            for sql in self.sqls:
+                if sql.find("CREATE") != -1:
+                    sql = decorator.createWithoutFK(sql)
+                    cursor_opengauss.execute(sql)
+                elif sql.find("BEGIN TRANSACTION;") != -1:
+                    continue
+                else:
+                    sql = decorator.Insert(sql)
+                    cursor_opengauss.execute(sql)
+                self.sqls_log.info(sql)
+            conn.commit()
+        except Exception as e:
+            self.error_log.error(e)
         finally:
             if conn is not None:
                 self.opengauss.putconn(conn)

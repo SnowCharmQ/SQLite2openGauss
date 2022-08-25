@@ -43,7 +43,7 @@ except psycopg2.OperationalError:
     exit(1)
 
 try:
-    conn_sqlite = sqlite3.connect('filmdb.sqlite')
+    conn_sqlite = sqlite3.connect('sqlite/filmdb.sqlite')
 except BaseException:
     print("Fail to connect to sqlite database")
     exit(1)

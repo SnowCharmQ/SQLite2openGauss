@@ -39,7 +39,7 @@ class OpenGaussConnection:
                 print("Fail to connect to OpenGauss database")
                 raise ex
             try:
-                self.pool = OpenGaussConnectionPool(1, 100,
+                self.pool = OpenGaussConnectionPool(1, 300,
                                                     database=self.opengauss_properties['database.name'],
                                                     user=self.opengauss_properties['database.user'],
                                                     password=self.opengauss_properties[
@@ -53,6 +53,8 @@ class OpenGaussConnection:
                 info_log.info(
                     "Successfully Log In OpenGauss Database %s As %s" % (
                         self.opengauss_properties['database.name'], self.opengauss_properties['database.user']))
+                print("Successfully Log In OpenGauss Database %s As %s" % (
+                    self.opengauss_properties['database.name'], self.opengauss_properties['database.user']))
                 break
             except Exception as e:
                 i += 1
@@ -85,6 +87,7 @@ class SqliteConnection:
             try:
                 self.conn_sqlite = sqlite3.connect(sqlite_properties['database.filename'])
                 info_log.info("Successfully Log In Sqlite3 Database %s" % (sqlite_properties['database.filename']))
+                print("Successfully Log In Sqlite3 Database %s" % (sqlite_properties['database.filename']))
                 break
             except Exception as e:
                 i += 1

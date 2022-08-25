@@ -26,6 +26,7 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
         cursor_opengauss.close()
         opengauss.putconn(conn_opengauss)
 
+    print("The data migration operation is in progress...")
     time_start = time.time()
 
     cursor_sqlite = conn_sqlite.cursor()
@@ -48,10 +49,8 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
                 cursor_opengauss.execute(sql)
             if is_record_sqls:
                 sqls_log.info(sql)
-        create_sqls = []
         for sql in conn_sqlite.iterdump():
             if sql.find("CREATE") != -1:
-                create_sqls.append(sql)
                 continue
             elif sql.find("BEGIN TRANSACTION;") != -1:
                 continue

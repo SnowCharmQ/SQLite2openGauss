@@ -27,6 +27,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         cursor_opengauss.close()
         opengauss.putconn(conn_opengauss)
 
+    print("The data migration operation is in progress...")
     time_start = time.time()
 
     cursor_sqlite = conn_sqlite.cursor()
@@ -59,10 +60,8 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
     count = 0
     sqls = []
     thread_list = []
-    create_sqls = []
     for sql in conn_sqlite.iterdump():
         if sql.find("CREATE") != -1:
-            create_sqls.append(sql)
             continue
         sqls.append(sql)
         count += 1
@@ -103,4 +102,4 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
     time_end = time.time()
 
     time_c = time_end - time_start
-    print('Time Cost =', time_c, 'seconds')
+    print('Time Cost = %.2f seconds' % time_c)

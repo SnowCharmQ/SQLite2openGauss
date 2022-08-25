@@ -1,105 +1,95 @@
-import psycopg2
-import sqlite3
+import argparse
+import logging
+import single_thread
+import multi_thread
+from prop.properties import Properties
 
 
-def convert_datetime_to_date(sql: str):
-    return sql.replace("datetime", "date")
+def main():
+    fmt = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
+    file1 = logging.FileHandler(filename='log/error.log', mode='a', encoding='utf-8')
+    file1.setFormatter(fmt)
+    error_log = logging.Logger(name='ERROR_LOG', level=logging.ERROR)
+    error_log.addHandler(file1)
+    file2 = logging.FileHandler(filename='log/info.log', mode='a', encoding='utf-8')
+    file2.setFormatter(fmt)
+    info_log = logging.Logger(name='INFO_LOG', level=logging.INFO)
+    info_log.addHandler(file2)
 
+    parser = argparse.ArgumentParser(description='Data Migration Script')
+    parser.add_argument("--opengauss", "-o", default="")
+    parser.add_argument("--sqlite", "-s", default="")
+    parser.add_argument("--multithreading", "-m", action="store_true")
 
-def try_to_remove(sql: str, x: int):
-    ll = x
-    rr = x
-    while sql[ll] != ',':
-        ll -= 1
-    while sql[rr] != ',' and sql[rr] != ';':
-        rr += 1
-    if sql[rr] == ',':
-        fk = sql[ll:rr]
+    args = parser.parse_args()
+
+    opengauss_properties = {}
+    is_file_update = False
+    if args.opengauss != '':
+        opengauss_file = 'prop/' + str(args.opengauss)
+        p = Properties(opengauss_file)
+        opengauss_properties = p.get_properties()
     else:
-        fk = sql[ll:(rr - 1)]
-    sql = sql.replace(fk, '')
-    return sql
+        opengauss_file = 'prop/opengauss.properties'
+    if not opengauss_properties.__contains__('database.name') or opengauss_properties['database.name'] == '':
+        opengauss_properties['database.name'] = input("Input the database name of OpenGauss:")
+        is_file_update = True
+    if not opengauss_properties.__contains__('database.schema') or opengauss_properties['database.schema'] == '':
+        opengauss_properties['database.schema'] = input("Input the schema name of OpenGauss:")
+        is_file_update = True
+    if not opengauss_properties.__contains__('database.host') or opengauss_properties['database.host'] == '':
+        opengauss_properties['database.host'] = input("Input the host of OpenGauss:")
+        is_file_update = True
+    if not opengauss_properties.__contains__('database.port') or opengauss_properties['database.port'] == '':
+        opengauss_properties['database.port'] = input("Input the port of OpenGauss:")
+        is_file_update = True
+    if not opengauss_properties.__contains__('database.user') or opengauss_properties['database.user'] == '':
+        opengauss_properties['database.user'] = input("Input the username of OpenGauss:")
+        is_file_update = True
+    if not opengauss_properties.__contains__('database.password') or opengauss_properties['database.password'] == '':
+        opengauss_properties['database.password'] = input("Input the user password of OpenGauss:")
+        is_file_update = True
+    if is_file_update:
+        save_message = "Save your input in the %s? [y/n]" % opengauss_file
+        flag = input(save_message)
+        if flag.upper() == 'Y' or flag.upper() == 'YES':
+            Properties.write_properties(opengauss_file, opengauss_properties)
+
+    sqlite_properties = {}
+    is_file_update = False
+    if args.sqlite != '':
+        sqlite_file = str(args.sqlite)
+        sqlite_file = "prop/" + sqlite_file
+        p = Properties(sqlite_file)
+        sqlite_properties = p.get_properties()
+    else:
+        sqlite_file = 'prop/sqlite.properties'
+    if not sqlite_properties.__contains__('database.filename'):
+        sqlite_properties['database.filename'] = input("Input the filename of Sqlite3:")
+        is_file_update = True
+    if is_file_update:
+        save_message = "Save your input in the %s? [y/n]" % sqlite_file
+        flag = input(save_message)
+        if flag.upper() == 'Y' or flag.upper() == 'YES':
+            Properties.write_properties(sqlite_file, sqlite_properties)
+
+    sqls_log = None
+    flag = input("Save the SQL statements in Data Migration? [y/n]")
+    is_record_sqls = False
+    if flag.upper() == 'Y' or flag.upper() == 'YES':
+        is_record_sqls = True
+        file3 = logging.FileHandler(filename='log/sqls.log', mode='a', encoding='utf-8')
+        file3.setFormatter(fmt)
+        sqls_log = logging.Logger(name='SQLS_LOG', level=logging.DEBUG)
+        sqls_log.addHandler(file3)
+
+    if args.multithreading:
+        multi_thread.multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, sqls_log,
+                                  is_record_sqls)
+    else:
+        single_thread.single_thread(opengauss_properties, sqlite_properties, error_log, info_log, sqls_log,
+                                    is_record_sqls)
 
 
-def remove_foreign_key(sql: str):
-    ss = sql.split('\n')
-    map(lambda x: x.strip(), ss)
-    sql = "".join(ss)
-    while True:
-        x = sql.find("foreign key")
-        if x == -1:
-            return sql
-        else:
-            sql = try_to_remove(sql, x)
-
-
-dbname = 'olin'
-
-try:
-    conn_opengauss = psycopg2.connect(database=dbname,
-                                      user="olin",
-                                      password="test123@",
-                                      host="120.46.202.38",
-                                      port="26000")
-except psycopg2.OperationalError:
-    print("Fail to connect to openGauss database")
-    exit(1)
-
-try:
-    conn_sqlite = sqlite3.connect('filmdb.sqlite')
-except BaseException:
-    print("Fail to connect to sqlite database")
-    exit(1)
-
-cursor_opengauss = conn_opengauss.cursor()
-cursor_sqlite = conn_sqlite.cursor()
-
-all_table = cursor_sqlite.execute("select * from sqlite_master where type = 'table';")
-
-try:
-    cursor_opengauss.execute("create schema %s;" % dbname)
-except psycopg2.errors.DuplicateSchema:
-    print("schema '%s' already exists" % dbname)
-    conn_opengauss.commit()
-
-
-cursor_opengauss.execute("start transaction;")
-cursor_opengauss.execute("set search_path to %s;" % dbname)
-
-# create_sql_list = []
-table_list = []
-
-for row in all_table:
-    # try:
-        # sql = remove_foreign_key(row[4])
-        # sql = convert_datetime_to_date(sql)
-        # create_sql_list.append(sql)
-    table_name = row[1]
-    table_list.append(table_name)
-    # except (
-    #         psycopg2.errors.DuplicateTable, psycopg2.errors.FeatureNotSupported,
-    #         psycopg2.errors.InFailedSqlTransaction, psycopg2.errors.UndefinedObject):
-    #     print("Error!!!!!!!!!")
-
-# table_count = len(create_sql_list)
-# for i in range(table_count):
-    # cursor_opengauss.execute("set search_path to %s;" % dbname)
-    # create_sql = create_sql_list[i]
-    # table_name = table_list[i]
-    # select_sql = "select * from %s;" % table_name
-    # cursor_opengauss.execute(create_sql)
-    # table_data = cursor_sqlite.execute(select_sql)
-    # for row in table_data:
-        # insert_sql = "insert into %s values %s;" % (table_name, str(row))
-        # cursor_opengauss.execute(insert_sql)
-    # print(select_column_sql)
-    # columns = map(lambda x: x[3], table_columns)
-    # print(columns)
-for sql in conn_sqlite.iterdump():
-    if sql.find("CREATE TABLE") != -1:
-        sql = remove_foreign_key(sql)
-        sql = convert_datetime_to_date(sql)
-    print(sql)
-    cursor_opengauss.execute(sql)
-
-conn_opengauss.commit()
+if __name__ == '__main__':
+    main()

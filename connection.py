@@ -39,7 +39,7 @@ class OpenGaussConnection:
                 print("Fail to connect to OpenGauss database")
                 raise ex
             try:
-                self.pool = OpenGaussConnectionPool(1, 50,
+                self.pool = OpenGaussConnectionPool(1, 100,
                                                     database=self.opengauss_properties['database.name'],
                                                     user=self.opengauss_properties['database.user'],
                                                     password=self.opengauss_properties[

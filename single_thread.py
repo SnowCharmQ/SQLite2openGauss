@@ -1,7 +1,7 @@
 import time
 import psycopg2
 
-import decorator
+import decorator2
 from connection import OpenGaussConnection, SqliteConnection
 
 
@@ -42,10 +42,10 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for sql in create_sqls:
             if sql.find("CREATE") != -1:
-                sql = decorator.createWithoutFK(sql)
+                sql = decorator2.createWithoutFK(sql)
                 cursor_opengauss.execute(sql)
             else:
-                sql = decorator.Insert(sql)
+                sql = decorator2.Insert(sql)
                 cursor_opengauss.execute(sql)
             if is_record_sqls:
                 sqls_log.info(sql)
@@ -55,12 +55,12 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
             elif sql.find("BEGIN TRANSACTION;") != -1:
                 continue
             else:
-                sql = decorator.Insert(sql)
+                sql = decorator2.Insert(sql)
                 cursor_opengauss.execute(sql)
                 if is_record_sqls:
                     sqls_log.info(sql)
         for create_sql in create_sqls:
-            sqls = decorator.alterFK(create_sql)
+            sqls = decorator2.alterFK(create_sql)
             for alter_sql in sqls:
                 cursor_opengauss.execute(alter_sql)
             sqls_log.info(create_sql)

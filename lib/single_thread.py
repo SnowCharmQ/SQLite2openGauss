@@ -40,10 +40,21 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
         conn_opengauss = opengauss.getconn()
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
+        tables = []
+        dic = {}
         for sql in create_sqls:
             if sql.upper().startswith("CREATE"):
-                sql = decorator2.createWithoutFK(sql)
-                cursor_opengauss.execute(sql)
+                index = sql.find('(')
+                table_name = sql[13:index]
+                newsql = decorator2.createWithoutFK(sql)
+
+                if sql.find("AUTOINCREMENT") != -1 or sql.find("autoincrement") != -1:
+                    newsql, col = decorator2.autoIncrement(newsql)
+                    tables.append(table_name)
+                    dic[table_name] = col
+
+                cursor_opengauss.execute(newsql)
+
             if is_record_sqls:
                 sqls_log.info(sql)
         for sql in conn_sqlite.iterdump():
@@ -60,7 +71,18 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
             sqls = decorator2.alterFK(create_sql)
             for alter_sql in sqls:
                 cursor_opengauss.execute(alter_sql)
-            sqls_log.info(create_sql)
+                if is_record_sqls:
+                    sqls_log.info(alter_sql)
+
+        for t, c in dic.items():
+            row_num = cursor_sqlite.execute("SELECT COUNT(*) FROM " + t)
+            seq_sql = "CREATE SEQUENCE sq_" + t + "  START " + row_num + " INCREMENT 1 CACHE 20;"
+            cursor_opengauss.execute(seq_sql)
+            alter_sql2 = "ALTER TABLE " + t + " ALTER COLUMN " + c + " set default nextval('sq_" + t + "');"
+            cursor_opengauss.execute(alter_sql2)
+            if is_record_sqls:
+                sqls_log.info(seq_sql)
+                sqls_log.info(alter_sql2)
         conn_opengauss.commit()
     except Exception as e:
         error_log.error(e)

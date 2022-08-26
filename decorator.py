@@ -1,8 +1,3 @@
-
-
-
-
-
 def convert_datetime_to_date(sql: str):
     return sql.replace("datetime", "date")
 
@@ -121,19 +116,4 @@ def Insert(sql):
 
 
     return sql
-
-createWithoutFK("CREATE TABLE movies(movieid       integer not null primary key,"+
-                    "title         varchar(100) not null"+
-                "  constraint 'title length' "+
-                                           "    check(length(title)<=100),"+
-                                           "    country       char(2) not null"+
-                                           "            constraint 'country length'"+
-                    "              check(length(country)<=2),"+
-                          "   year_released int not null"+
-                                  " constraint 'year_released numerical'"+
-                                              "      check(year_released+0=year_released),"+
-                                         "                 constraint 'runtime numerical'"+
-                                                                                                                                                                  "        check(runtime+0=runtime),"+
-                                                                                                                                                                  " unique(title, country, year_released),"+
-                                                                                                                                                                  "  foreign key(country) references countries(country_code));")
 

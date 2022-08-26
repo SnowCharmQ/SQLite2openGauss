@@ -42,7 +42,6 @@ def try_to_extract(sql: str, x: int):
 
 def remove_foreign_key(sql: str):
     ss = sql.split('\n')
-
     map(lambda x: x.strip(), ss)
     sql = "".join(ss)
     while True:
@@ -88,10 +87,8 @@ def getTableName(sql):
 def original_processed(func):
     def wrapper(*args, **kwargs):
         sql = func(*args, **kwargs)
-
-
-
-        # print("##################")
+        sql = convert_datatype(sql)
+        sql = not_null(sql)
         return sql
 
     return wrapper
@@ -100,9 +97,6 @@ def original_processed(func):
 @original_processed
 def createWithoutFK(sql):
     sql = remove_foreign_key(sql)
-    sql = convert_datatype(sql)
-    sql = not_null(sql)
-
     return sql
 
 
@@ -128,46 +122,91 @@ def insert_array(sql: str):
 def haveArrayType(sql: str):
     # 判断create table 里面的数据类型是否有数组
     # 如果有，insert操作时，执行insert_array
-    x = sql.find("CREATE TABLE")
-    if x != -1:
-        y = sql.find('[]')
-        if y != -1:
-            return True
+    y = sql.find('[]')
+    if y != -1:
+        return True
     return False
+
+
+def array_attribute(sql: str):
+    # 返回含有array的属性列的名称
+    sql = sql.replace(",", " ")
+    attribute = sql.split()
+    count = 0
+    for i in attribute:
+        if i.find('[]'):
+            att = attribute[count - 1]
+            count += 1
+    return att
+
 
 def autoIncrement(sql: str):
     # 如果系统表中包含 sqlite_sequence （或者有AUTOINCREMENT 关键字）
     # 说明有自增列
     # 那么在create table里面调用此函数
-    # 即使用序列整型与此列关联
-    sql = sql.replace("AUTOINCREMENT", "SERIAL")
-    return sql
+    # 即使用创建的序列与此列关联
 
-def insert_autoIncrement(sql:str):
-    # insert时调用此函数, 将相应自增列插入值 : default
-    # 具体插入哪一列可查看 sqlite_sequenc 表
-    return sql
+    index = sql.find('(')
+    table_name = sql[13:index]
 
+    new_sql = ''
+    if sql.find("AUTOINCREMENT") != -1 or sql.find("autoincrement") != -1:
+        sql = sql[index + 1:]
+        for i in sql.split(','):
+            print(i)
+            if i.find("AUTOINCREMENT") != -1 or i.find("autoincrement") != -1:
+                incre_att = i.split()[0]
+                if i.find('PRIMARY KEY') != -1 or i.find('primary key') != -1:
+                    i = incre_att + " DEFAULT nextval('sq_" + table_name + "') " + 'PRIMARY KEY'
+                else:
+                    i = incre_att + " DEFAULT nextval('sq_" + table_name + "') "
+
+            new_sql = new_sql + ',' + i
+
+        return 'CREATE TABLE ' + table_name + "(" + new_sql[1:]
+    else:
+        return sql
 
 
 @original_processed
 def Insert(sql):
-    sql = sql.replace("\"", "'")
-    sql = insert_array(sql)
+    if sql.find('INSERT INTO') != -1:  # 去掉table名称的的双引号
+        sql = sql[0:12] + sql[13:]
+        index = sql.find("\"")
+        sql = sql[:index] + sql[index + 1:]
+        sql = insert_array(sql)
+
     return sql
 
+# createWithoutFK("CREATE TABLE movies(movieid       integer not null primary key," +
+#
+# ans =("CREATE TABLE book(" +
 
-createWithoutFK("CREATE TABLE movies(movieid       integer not null primary key," +
-                "title         varchar(100) not null" +
-                "  constraint 'title length' " +
-                "    check(length(title)<=100)," +
-                "    country       char(2) not null" +
-                "            constraint 'country length'" +
-                "              check(length(country)<=2)," +
-                "   year_released int not null" +
-                " constraint 'year_released numerical'" +
-                "      check(year_released+0=year_released)," +
-                "                 constraint 'runtime numerical'" +
-                "        check(runtime+0=runtime)," +
-                " unique(title, country, year_released)," +
-                "  foreign key(country) references countries(country_code));")
+#              "ID INT PRIMARY KEY     NOT NULL," +
+
+#            "NAME           TEXT    NOT NULL," +
+
+#            "classification        text[]);")
+# index= ans.find('(')
+# print(ans[13:index])
+
+# string = "   "
+# string, att = autoIncrement("CREATE TABLE COMPANY(" +
+#                       "NAME           TEXT      NOT NULL," +
+#                       "AGE            INT       NOT NULL," +
+#                      "ADDRESS        CHAR(50)," +
+#                   "SALARY         REAL," +
+#                   " ID INTEGER PRIMARY KEY   AUTOINCREMENT);")
+# print(string)
+# print(att)
+# index = string.find('(')
+# print(string[13:index])
+# string="INSERT INTO 'alt_titles' VALUES(104,1777,'Alexander');"
+##print(Insert(string));
+# a=autoIncrement("CREATE TABLE user("+
+# 	"id integer autoincrement,"+
+# 	"username character varying,"+
+# 	"password character varying);"
+#  )
+#
+# print(a)

@@ -41,10 +41,23 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         conn_opengauss = opengauss.getconn()
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
+        auto_incre = {}
         for sql in create_sqls:
             if sql.upper().startswith("CREATE"):
-                sql = decorator2.createWithoutFK(sql)
-                cursor_opengauss.execute(sql)
+
+                index = sql.find('(')
+                table_name = sql[13:index]
+
+                if sql.find("AUTOINCREMENT") != -1 or sql.find("autoincrement") != -1:
+                    cursor_opengauss.execute(
+                        "CREATE SEQUENCE sq_" + table_name + "  START 1 INCREMENT 1 CACHE 20;")  # 创建自增序列
+
+                newsql = decorator2.createWithoutFK(sql)
+                newsql = decorator2.autoIncrement(newsql)
+
+
+                cursor_opengauss.execute(newsql)
+
             if is_record_sqls:
                 sqls_log.info(sql)
         conn_opengauss.commit()
@@ -60,6 +73,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
     for sql in conn_sqlite.iterdump():
         if sql.upper().startswith("CREATE"):
             continue
+        sql = decorator2.Insert(sql)
         sqls.append(sql)
         count += 1
         if count == 100:

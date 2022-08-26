@@ -1,9 +1,9 @@
 import time
 import psycopg2
 
-import decorator2
-from connection import OpenGaussConnection, SqliteConnection
-from opengauss_thread import OpenGaussLogThread, OpenGaussThread
+from lib import decorator2
+from lib.connection import OpenGaussConnection, SqliteConnection
+from lib.opengauss_thread import OpenGaussLogThread, OpenGaussThread
 
 
 def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, sqls_log, is_record_sqls):
@@ -72,7 +72,6 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
     for sql in conn_sqlite.iterdump():
         if sql.upper().startswith("CREATE"):
             continue
-        sql = decorator2.Insert(sql)
         sqls.append(sql)
         count += 1
         if count == 100:

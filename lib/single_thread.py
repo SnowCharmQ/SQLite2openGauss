@@ -1,8 +1,8 @@
 import time
 import psycopg2
 
-import decorator2
-from connection import OpenGaussConnection, SqliteConnection
+from lib import decorator2
+from lib.connection import OpenGaussConnection, SqliteConnection
 
 
 def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, sqls_log, is_record_sqls):

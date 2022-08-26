@@ -2,10 +2,10 @@ import argparse
 import logging
 import psycopg2
 import time
-import decorator
+from lib import decorator
 from prop.properties import Properties
-from opengauss_thread import OpenGaussThread
-from connection import OpenGaussConnection, SqliteConnection
+from lib.opengauss_thread import OpenGaussThread
+from lib.connection import OpenGaussConnection, SqliteConnection
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
         p = Properties(opengauss_file)
         opengauss_properties = p.get_properties()
     else:
-        opengauss_file = 'prop/opengauss.properties'
+        opengauss_file = '../prop/opengauss.properties'
     if not opengauss_properties.__contains__('database.name') or opengauss_properties['database.name'] == '':
         opengauss_properties['database.name'] = input("Input the database name of OpenGauss:")
         is_file_update = True
@@ -59,7 +59,7 @@ def main():
         p = Properties(sqlite_file)
         sqlite_properties = p.get_properties()
     else:
-        sqlite_file = 'prop/sqlite.properties'
+        sqlite_file = '../prop/sqlite.properties'
     if not sqlite_properties.__contains__('database.filename'):
         sqlite_properties['database.filename'] = input("Input the filename of Sqlite3:")
         is_file_update = True
@@ -139,7 +139,7 @@ def main():
     conn_opengauss = opengauss.getconn()
     cursor_opengauss = conn_opengauss.cursor()
     for create_sql in create_sqls:
-        sqls=decorator.alterFK(create_sql)
+        sqls= decorator.alterFK(create_sql)
         for alter_sql in sqls:
             cursor_opengauss.execute(alter_sql)
             # print("alter")

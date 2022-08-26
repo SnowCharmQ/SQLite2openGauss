@@ -1,8 +1,8 @@
 import logging
 import threading
-import decorator
 
-from connection import OpenGaussConnection
+from lib import decorator2
+from lib.connection import OpenGaussConnection
 
 
 class OpenGaussThread(threading.Thread):
@@ -21,13 +21,13 @@ class OpenGaussThread(threading.Thread):
             cursor_opengauss = conn.cursor()
             cursor_opengauss.execute("set search_path to %s;" % self.dbschema)
             for sql in self.sqls:
-                if sql.find("CREATE") != -1:
-                    sql = decorator.createWithoutFK(sql)
+                if sql.upper().startswith("CREATE") != -1:
+                    sql = decorator2.createWithoutFK(sql)
                     cursor_opengauss.execute(sql)
-                elif sql.find("BEGIN TRANSACTION;") != -1:
+                elif sql.upper().startswith("BEGIN TRANSACTION;") != -1:
                     continue
                 else:
-                    sql = decorator.Insert(sql)
+                    sql = decorator2.Insert(sql)
                     cursor_opengauss.execute(sql)
             conn.commit()
         except Exception as e:
@@ -52,12 +52,12 @@ class OpenGaussLogThread(OpenGaussThread):
             cursor_opengauss.execute("set search_path to %s;" % self.dbschema)
             for sql in self.sqls:
                 if sql.upper().startswith("CREATE"):
-                    sql = decorator.createWithoutFK(sql)
+                    sql = decorator2.createWithoutFK(sql)
                     cursor_opengauss.execute(sql)
                 elif sql.upper().startswith("BEGIN TRANSACTION;") or sql.upper().startswith("COMMIT;"):
                     continue
                 else:
-                    sql = decorator.Insert(sql)
+                    sql = decorator2.Insert(sql)
                     cursor_opengauss.execute(sql)
                 self.sqls_log.info(sql)
             conn.commit()

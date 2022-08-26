@@ -1,7 +1,6 @@
 import argparse
 import logging
-import single_thread
-import multi_thread
+from lib import multi_thread, single_thread
 from prop.properties import Properties
 
 

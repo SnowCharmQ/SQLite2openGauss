@@ -42,7 +42,6 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for sql in create_sqls:
-            sql = sql.upper()
             if sql.find("CREATE") != -1:
                 sql = decorator2.createWithoutFK(sql)
                 cursor_opengauss.execute(sql)
@@ -59,8 +58,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
     sqls = []
     thread_list = []
     for sql in conn_sqlite.iterdump():
-        sql = sql.upper()
-        if sql.find("CREATE") != -1:
+        if sql.upper().find("CREATE") != -1:
             continue
         sqls.append(sql)
         count += 1
@@ -87,7 +85,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for create_sql in create_sqls:
-            sqls = decorator2.alterFK(create_sql.upper())
+            sqls = decorator2.alterFK(create_sql)
             for alter_sql in sqls:
                 cursor_opengauss.execute(alter_sql)
                 if is_record_sqls:

@@ -41,20 +41,19 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         conn_opengauss = opengauss.getconn()
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
-        auto_incre = {}
+        tables = []
+        dic = {}
         for sql in create_sqls:
             if sql.upper().startswith("CREATE"):
 
                 index = sql.find('(')
                 table_name = sql[13:index]
+                newsql = decorator2.createWithoutFK(sql)
 
                 if sql.find("AUTOINCREMENT") != -1 or sql.find("autoincrement") != -1:
-                    cursor_opengauss.execute(
-                        "CREATE SEQUENCE sq_" + table_name + "  START 1 INCREMENT 1 CACHE 20;")  # 创建自增序列
-
-                newsql = decorator2.createWithoutFK(sql)
-                newsql = decorator2.autoIncrement(newsql)
-
+                    newsql, col = decorator2.autoIncrement(newsql)
+                    tables.append(table_name)
+                    dic[table_name] = col
 
                 cursor_opengauss.execute(newsql)
 
@@ -104,6 +103,14 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
                 cursor_opengauss.execute(alter_sql)
                 if is_record_sqls:
                     sqls_log.info(alter_sql)
+        for t, c in dic.items():
+            row_num = cursor_sqlite.execute("SELECT COUNT(*) FROM " + t)
+            seq_sql = "CREATE SEQUENCE sq_" + t + "  START " + row_num + " INCREMENT 1 CACHE 20;"
+            cursor_opengauss.execute(seq_sql)  # 创建自增序列
+            alter_sql2 = "ALTER TABLE " + t + " ALTER COLUMN " + c + " set default nextval('sq_" + t + "');"
+            cursor_opengauss.execute(alter_sql2)
+            sqls_log.info(seq_sql)
+            sqls_log.info(alter_sql2)
         conn_opengauss.commit()
     except Exception as e:
         error_log.error(e)

@@ -148,7 +148,7 @@ def autoIncrement(sql: str):
 
     index = sql.find('(')
     table_name = sql[13:index]
-
+    incre_att = ''
     new_sql = ''
     if sql.find("AUTOINCREMENT") != -1 or sql.find("autoincrement") != -1:
         sql = sql[index + 1:]
@@ -157,15 +157,15 @@ def autoIncrement(sql: str):
             if i.find("AUTOINCREMENT") != -1 or i.find("autoincrement") != -1:
                 incre_att = i.split()[0]
                 if i.find('PRIMARY KEY') != -1 or i.find('primary key') != -1:
-                    i = incre_att + " DEFAULT nextval('sq_" + table_name + "') " + 'PRIMARY KEY'
+                    i = incre_att + " INTEGER " + "PRIMARY KEY"
                 else:
-                    i = incre_att + " DEFAULT nextval('sq_" + table_name + "') "
+                    i = incre_att + " INTEGER "
 
             new_sql = new_sql + ',' + i
 
-        return 'CREATE TABLE ' + table_name + "(" + new_sql[1:]
+        return 'CREATE TABLE ' + table_name + "(" + new_sql[1:], incre_att
     else:
-        return sql
+        return sql, incre_att
 
 
 @original_processed
@@ -203,10 +203,10 @@ def Insert(sql):
 # print(string[13:index])
 # string="INSERT INTO 'alt_titles' VALUES(104,1777,'Alexander');"
 ##print(Insert(string));
-# a=autoIncrement("CREATE TABLE user("+
-# 	"id integer autoincrement,"+
+# a,b=autoIncrement("CREATE TABLE user("+
+# 	"id integer autoincrement primary key,"+
 # 	"username character varying,"+
 # 	"password character varying);"
 #  )
 #
-# print(a)
+# print(a,b)

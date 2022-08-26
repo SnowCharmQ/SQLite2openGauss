@@ -41,15 +41,15 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for sql in create_sqls:
-            if sql.upper().find("CREATE") != -1:
+            if sql.upper().startswith("CREATE"):
                 sql = decorator2.createWithoutFK(sql)
                 cursor_opengauss.execute(sql)
             if is_record_sqls:
                 sqls_log.info(sql)
         for sql in conn_sqlite.iterdump():
-            if sql.upper().find("CREATE") != -1:
+            if sql.upper().startswith("CREATE"):
                 continue
-            elif sql.find("BEGIN TRANSACTION;") != -1 or sql.find("COMMIT;") != -1:
+            elif sql.upper().startswith("BEGIN TRANSACTION;") or sql.upper().startswith("COMMIT;") != -1:
                 continue
             else:
                 sql = decorator2.Insert(sql)

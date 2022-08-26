@@ -51,10 +51,10 @@ class OpenGaussLogThread(OpenGaussThread):
             cursor_opengauss = conn.cursor()
             cursor_opengauss.execute("set search_path to %s;" % self.dbschema)
             for sql in self.sqls:
-                if sql.find("CREATE") != -1:
+                if sql.upper().startswith("CREATE"):
                     sql = decorator.createWithoutFK(sql)
                     cursor_opengauss.execute(sql)
-                elif sql.upper().find("BEGIN TRANSACTION;") != -1 or sql.upper().find("COMMIT;") != -1:
+                elif sql.upper().startswith("BEGIN TRANSACTION;") or sql.upper().startswith("COMMIT;"):
                     continue
                 else:
                     sql = decorator.Insert(sql)

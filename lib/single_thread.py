@@ -83,6 +83,19 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
             if is_record_sqls:
                 sqls_log.info(seq_sql)
                 sqls_log.info(alter_sql2)
+
+        triggers = cursor_sqlite.execute("select * from sqlite_master where type = 'trigger';")
+        for row in triggers:
+            trigger_name = row[1]
+            trigger_sql = row[4]
+            function = decorator2.trigger_to_function(trigger_name, trigger_sql)
+            trigger = decorator2.new_trigger(trigger_name, trigger_sql)
+            cursor_opengauss.execute(function)
+            cursor_opengauss.execute(trigger)
+            if is_record_sqls:
+                sqls_log.info(function)
+                sqls_log.info(trigger)
+
         conn_opengauss.commit()
     except Exception as e:
         error_log.error(e)

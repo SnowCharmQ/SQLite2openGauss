@@ -59,7 +59,7 @@ class OpenGaussLogThread(OpenGaussThread):
                 else:
                     sql = decorator2.Insert(sql)
                     cursor_opengauss.execute(sql)
-                self.sqls_log.info(sql)
+                self.sqls_log.info(sql.replace("\n", ""))
             conn.commit()
         except Exception as e:
             self.error_log.error(e)

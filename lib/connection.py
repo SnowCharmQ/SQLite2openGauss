@@ -85,7 +85,7 @@ class SqliteConnection:
                 print("Fail to connect to Sqlite3 database")
                 raise ex
             try:
-                self.conn_sqlite = sqlite3.connect(sqlite_properties['database.filename'])
+                self.conn_sqlite = sqlite3.connect("sqlite/" + sqlite_properties['database.filename'])
                 info_log.info("Successfully Log In Sqlite3 Database %s" % (sqlite_properties['database.filename']))
                 print("Successfully Log In Sqlite3 Database %s" % (sqlite_properties['database.filename']))
                 break

@@ -34,7 +34,6 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
     create_sqls = []
     for row in all_table:
         s = row[4]
-        s = s.replace('\n', '').replace('\r', '').replace('   ', ' ')
         create_sqls.append(s + ";")
     try:
         conn_opengauss = opengauss.getconn()
@@ -56,7 +55,7 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
                 cursor_opengauss.execute(newsql)
 
             if is_record_sqls:
-                sqls_log.info(sql)
+                sqls_log.info(sql.replace("\n", ""))
         for sql in conn_sqlite.iterdump():
             if sql.upper().startswith("CREATE"):
                 continue
@@ -66,13 +65,13 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
                 sql = decorator2.Insert(sql)
                 cursor_opengauss.execute(sql)
                 if is_record_sqls:
-                    sqls_log.info(sql)
+                    sqls_log.info(sql.replace("\n", ""))
         for create_sql in create_sqls:
             sqls = decorator2.alterFK(create_sql)
             for alter_sql in sqls:
                 cursor_opengauss.execute(alter_sql)
                 if is_record_sqls:
-                    sqls_log.info(alter_sql)
+                    sqls_log.info(alter_sql.replace("\n", ""))
 
         for t, c in dic.items():
             row_num = cursor_sqlite.execute("SELECT COUNT(*) FROM " + t)
@@ -81,8 +80,8 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
             alter_sql2 = "ALTER TABLE " + t + " ALTER COLUMN " + c + " set default nextval('sq_" + t + "');"
             cursor_opengauss.execute(alter_sql2)
             if is_record_sqls:
-                sqls_log.info(seq_sql)
-                sqls_log.info(alter_sql2)
+                sqls_log.info(seq_sql.replace("\n", ""))
+                sqls_log.info(alter_sql2.replace("\n", ""))
 
         triggers = cursor_sqlite.execute("select * from sqlite_master where type = 'trigger';")
         for row in triggers:
@@ -93,8 +92,8 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
             cursor_opengauss.execute(function)
             cursor_opengauss.execute(trigger)
             if is_record_sqls:
-                sqls_log.info(function)
-                sqls_log.info(trigger)
+                sqls_log.info(function.replace("\n", ""))
+                sqls_log.info(trigger.replace("\n", ""))
 
         conn_opengauss.commit()
     except Exception as e:

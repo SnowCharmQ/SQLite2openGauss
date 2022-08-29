@@ -1,3 +1,4 @@
+import os
 import argparse
 import logging
 from lib import multi_thread, single_thread
@@ -6,6 +7,10 @@ from prop.properties import Properties
 
 def main():
     fmt = logging.Formatter(fmt='[%(asctime)s] [%(levelname)s] >>>  %(message)s', datefmt='%Y-%m-%d %I:%M:%S')
+    if not os.path.exists("log"):
+        os.mkdir("log")
+    if not os.path.exists("sqlite"):
+        os.mkdir("sqlite")
     file1 = logging.FileHandler(filename='log/error.log', mode='a', encoding='utf-8')
     file1.setFormatter(fmt)
     error_log = logging.Logger(name='ERROR_LOG', level=logging.ERROR)

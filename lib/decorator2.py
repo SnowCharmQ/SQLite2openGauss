@@ -1,6 +1,12 @@
 import re
 
 
+def get_table_name(sql):
+    x = sql.find("CREATE TABLE")
+    y = sql.find("(")
+    return sql[x + 12:y]
+
+
 def find_n_sub_str(src: str, sub: str, n: int, start: int):
     index = src.find(sub, start)
     if index != -1 and n > 0:
@@ -187,23 +193,18 @@ def convert_datatype(sql: str):
     sql = try_to_convert("graphic", "nchar", sql)
     sql = try_to_convert("year", "integer", sql)
     sql = try_to_convert("line", "path", sql)
+    sql = try_to_convert("autoincrement", "integer", sql)
     return sql
 
 
-def get_table_name(sql):
-    x = sql.find("CREATE TABLE")
-    y = sql.find("(")
-    return sql[x + 12:y]
-
-
-def createWithoutFK(sql):
+def create_without_fk(sql):
     sql = remove_foreign_key(sql)
     sql = convert_datatype(sql)
     sql = convert_to_not_null(sql)
     return sql
 
 
-def alterFK(sql):
+def alter_fk(sql):
     sqls = extract_foreign_key(sql)
     table_name = get_table_name(sql)
     alter_sqls = []
@@ -217,104 +218,45 @@ def insert_array(sql: str):
     y = sql.find("]")
     if x != -1 and y != -1:
         sql = sql[:x + 1] + 'array' + sql[x + 2:y + 1] + sql[y + 2:]
-
     return sql
 
 
-def haveArrayType(sql: str):
-    # 判断create table 里面的数据类型是否有数组
-    # 如果有，insert操作时，执行insert_array
-    y = sql.find('[]')
-    if y != -1:
-        return True
-    return False
+def autoincrement(sql: str, table_name: str, num: int):
+    sqls = []
+    sql = sql.replace("\n", " ")
+    cnt = sql.upper().count("AUTOINCREMENT")
+    column_name = None
+    if cnt > 0:
+        for n in range(cnt):
+            index = find_n_sub_str(sql.upper(), "AUTOINCREMENT", n, 0)
+            if check_integrity(sql.upper(), "AUTOINCREMENT", index) \
+                    and check_is_column_name(sql.upper(), index):
+                index_e = index - 1
+                while index_e >= 0:
+                    if sql[index_e] != ' ':
+                        break
+                    index_e -= 1
+                index_s = index_e
+                while index_s >= 0:
+                    if sql[index_s] == ' ':
+                        break
+                    index_s -= 1
+                column_name = sql[(index_s + 1):(index_e + 1)]
+            if column_name is not None:
+                seq_sql = "CREATE SEQUENCE sq_" + table_name + "  START " + str(num) + " INCREMENT 1 CACHE 20;"
+                alter_sql = "ALTER TABLE " + table_name + " ALTER COLUMN " + column_name + \
+                            " set default nextval('sq_" + table_name + "');"
+                sqls.append(seq_sql)
+                sqls.append(alter_sql)
+                column_name = None
+    return sqls
 
 
-def array_attribute(sql: str):
-    # 返回含有array的属性列的名称
-    sql = sql.replace(",", " ")
-    attribute = sql.split()
-    count = 0
-    for i in attribute:
-        if i.find('[]'):
-            att = attribute[count - 1]
-            count += 1
-    return att
-
-
-def autoIncrement(sql: str):
-    # 如果系统表中包含 sqlite_sequence （或者有AUTOINCREMENT 关键字）
-    # 说明有自增列
-    # 那么在create table里面调用此函数
-    # 即使用创建的序列与此列关联
-
-    index = sql.find('(')
-    table_name = sql[13:index]
-    incre_att = ''
-    new_sql = ''
-    if sql.find("AUTOINCREMENT") != -1 or sql.find("autoincrement") != -1:
-        sql = sql[index + 1:]
-        for i in sql.split(','):
-            print(i)
-            if i.find("AUTOINCREMENT") != -1 or i.find("autoincrement") != -1:
-                incre_att = i.split()[0]
-                if i.find('PRIMARY KEY') != -1 or i.find('primary key') != -1:
-                    i = incre_att + " INTEGER " + "PRIMARY KEY"
-                else:
-                    i = incre_att + " INTEGER "
-
-            new_sql = new_sql + ',' + i
-
-        return 'CREATE TABLE ' + table_name + "(" + new_sql[1:], incre_att
-    else:
-        return sql, incre_att
-
-
-def Insert(sql):
-    if sql.find('INSERT INTO') != -1:  # 去掉table名称的的双引号
-        sql = sql[0:12] + sql[13:]
-        index = sql.find("\"")
-        sql = sql[:index] + sql[index + 1:]
+def insert(sql):
+    if sql.find('INSERT INTO') != -1:
         sql = insert_array(sql)
         sql = convert_to_not_null(sql)
     return sql
-
-
-# createWithoutFK("CREATE TABLE movies(movieid       integer not null primary key," +
-#
-# ans =("CREATE TABLE book(" +
-
-#              "ID INT PRIMARY KEY     NOT NULL," +
-
-#            "NAME           TEXT    NOT NULL," +
-
-#            "classification        text[]);")
-# index= ans.find('(')
-# print(ans[13:index])
-
-# string = "   "
-# string, att = autoIncrement("CREATE TABLE COMPANY(" +
-#                       "NAME           TEXT      NOT NULL," +
-#                       "AGE            INT       NOT NULL," +
-#                      "ADDRESS        CHAR(50)," +
-#                   "SALARY         REAL," +
-#                   " ID INTEGER PRIMARY KEY   AUTOINCREMENT);")
-# print(string)
-# print(att)
-# index = string.find('(')
-# print(string[13:index])
-# string="INSERT INTO 'alt_titles' VALUES(104,1777,'Alexander');"
-##print(Insert(string));
-# a,b=autoIncrement("CREATE TABLE user("+
-# 	"id integer autoincrement primary key,"+
-# 	"username character varying,"+
-# 	"password character varying);"
-#  )
-#
-# print(a,b)
-# sql = "CREATE TABLE connections(  station_id int    not null    constraint connections_fk    references stations,  connection varchar(100) not null,  constraint connections_pk    primary key (station_id, connection));"
-# newsql = createWithoutFK(sql)
-# print(newsql)
 
 
 def trigger_to_function(trigger_name: str, sql: str):

@@ -287,24 +287,16 @@ def insert(sql: str):
 def trigger_to_function(trigger_name: str, sql: str):
     function_name = trigger_name + "()"
     sql = sql.upper()
-    # dealing with \t and\n
     sql_L = sql.split()
     sql = " ".join(sql_L)
-
-    # locate action
     ll = sql.find("BEGIN") + 6
     rr = sql.find("END") - 2
     action = sql[ll:rr]
-
     function = "CREATE FUNCTION function_name RETURNS TRIGGER AS $example_table$\n" + "    BEGIN\n" + "        action;\n" + "        RETURN NEW;\n" + "    END;\n" + "$example_table$ LANGUAGE plpgsql;"
     function = function.replace("function_name", function_name)
     function = function.replace("action", action)
-
-    # keywords_needed_to_be_changed
     function = function.replace("DATETIME('NOW')", "CURRENT_TIMESTAMP")
     function = function.replace("json_array", "array")
-
-    print(function)
     return function
 
 
@@ -312,5 +304,4 @@ def new_trigger(trigger_name: str, sql: str):
     rr = sql.find("BEGIN")
     new_sql = sql[:rr]
     trigger_sql = new_sql + "FOR EACH ROW EXECUTE PROCEDURE " + trigger_name + "()" + ";"
-    print(trigger_sql)
     return trigger_sql

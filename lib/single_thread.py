@@ -79,8 +79,15 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
             cursor_opengauss.execute(function)
             cursor_opengauss.execute(trigger)
             if is_record_sqls:
-                sqls_log.info(function.replace("\n", ""))
-                sqls_log.info(trigger.replace("\n", ""))
+                sqls_log.info(function)
+                sqls_log.info(trigger)
+        views = cursor_sqlite.execute("select * from sqlite_master where type = 'view';")
+        for row in views:
+            sql = row[4]
+            sql = decorator2.remove_comment(sql)
+            cursor_opengauss.execute(sql)
+            if is_record_sqls:
+                sqls_log.info(sql)
 
         conn_opengauss.commit()
     except Exception as e:

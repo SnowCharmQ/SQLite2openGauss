@@ -42,6 +42,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for sql in create_sqls:
             sql = decorator2.create_without_fk(sql)
+            cursor_opengauss.execute(sql)
             if is_record_sqls:
                 sqls_log.info(sql.replace("\n", ""))
         conn_opengauss.commit()

@@ -200,7 +200,6 @@ def convert_datatype(sql: str):
 def create_without_fk(sql):
     sql = remove_foreign_key(sql)
     sql = convert_datatype(sql)
-    sql = convert_to_not_null(sql)
     return sql
 
 
@@ -209,7 +208,7 @@ def alter_fk(sql):
     table_name = get_table_name(sql)
     alter_sqls = []
     for sql in sqls:
-        alter_sqls.append("alter table " + table_name + " add " + sql)
+        alter_sqls.append("alter table " + table_name + " add " + sql + ";")
     return alter_sqls
 
 

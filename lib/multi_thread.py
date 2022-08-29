@@ -41,6 +41,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for sql in create_sqls:
+            sql = decorator2.remove_comment(sql)
             sql = decorator2.create_without_fk(sql)
             cursor_opengauss.execute(sql)
             if is_record_sqls:
@@ -56,6 +57,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
     sqls = []
     thread_list = []
     for sql in conn_sqlite.iterdump():
+        sql = decorator2.remove_comment(sql)
         if sql.upper().startswith("CREATE"):
             continue
         sqls.append(sql)
@@ -83,6 +85,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for create_sql in create_sqls:
+            create_sql = decorator2.remove_comment(create_sql)
             sqls = decorator2.alter_fk(create_sql)
             for alter_sql in sqls:
                 cursor_opengauss.execute(alter_sql)
@@ -111,7 +114,9 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
             trigger_name = row[1]
             trigger_sql = row[4]
             function = decorator2.trigger_to_function(trigger_name, trigger_sql)
+            function = decorator2.remove_comment(function)
             trigger = decorator2.new_trigger(trigger_name, trigger_sql)
+            trigger = decorator2.remove_comment(trigger)
             cursor_opengauss.execute(function)
             cursor_opengauss.execute(trigger)
             if is_record_sqls:

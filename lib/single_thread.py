@@ -40,11 +40,13 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
         for sql in create_sqls:
+            sql = decorator2.remove_comment(sql)
             sql = decorator2.create_without_fk(sql)
             cursor_opengauss.execute(sql)
             if is_record_sqls:
                 sqls_log.info(sql.replace("\n", ""))
         for sql in conn_sqlite.iterdump():
+            sql = decorator2.remove_comment(sql)
             if sql.upper().startswith("CREATE"):
                 continue
             elif sql.upper().startswith("BEGIN TRANSACTION;") or sql.upper().startswith("COMMIT;"):
@@ -55,6 +57,7 @@ def single_thread(opengauss_properties, sqlite_properties, error_log, info_log, 
                 if is_record_sqls:
                     sqls_log.info(sql.replace("\n", ""))
         for create_sql in create_sqls:
+            create_sql = decorator2.remove_comment(create_sql)
             sqls = decorator2.alter_fk(create_sql)
             for alter_sql in sqls:
                 cursor_opengauss.execute(alter_sql)

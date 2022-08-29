@@ -1,7 +1,18 @@
 import re
 
 
-def get_table_name(sql):
+def remove_comment(sql: str):
+    while sql.find("--") != -1:
+        i = index = sql.find("--")
+        while i < len(sql) and sql[i] != '\n':
+            i += 1
+        if i == len(sql):
+            return sql[0:index]
+        sql = sql[0:index] + sql[(i + 1):]
+    return sql
+
+
+def get_table_name(sql: str):
     x = sql.find("CREATE TABLE")
     y = sql.find("(")
     return sql[x + 12:y]
@@ -78,6 +89,20 @@ def convert_double_quote(sql: str):
             return oldsql + sql
         else:
             return sql
+
+
+def convert_char(sql: str):
+    pattern = re.compile('CHAR[(]\d+[)]')
+    cnt = len(pattern.findall(sql.upper()))
+    for n in range(cnt):
+        index, sub = find_n_sub_str_re(sql.upper(), pattern, n, 0)
+        if check_integrity(sql.upper(), sub, index):
+            num = int(sub[5:-1])
+            num *= 3
+            num = str(num)
+            result = "CHAR(%s)" % num
+            sql = sql[0:index] + result + sql[(index + len(sub)):]
+    return sql
 
 
 def convert_varchar(sql: str):
@@ -185,6 +210,7 @@ def extract_foreign_key(sql: str):
 
 
 def convert_datatype(sql: str):
+    sql = convert_char(sql)
     sql = convert_varchar(sql)
     sql = try_to_convert("datetime", "timestamp without time zone", sql)
     sql = try_to_convert("real", "double precision", sql)
@@ -197,13 +223,13 @@ def convert_datatype(sql: str):
     return sql
 
 
-def create_without_fk(sql):
+def create_without_fk(sql: str):
     sql = remove_foreign_key(sql)
     sql = convert_datatype(sql)
     return sql
 
 
-def alter_fk(sql):
+def alter_fk(sql: str):
     sqls = extract_foreign_key(sql)
     table_name = get_table_name(sql)
     alter_sqls = []
@@ -251,7 +277,7 @@ def autoincrement(sql: str, table_name: str, num: int):
     return sqls
 
 
-def insert(sql):
+def insert(sql: str):
     if sql.find('INSERT INTO') != -1:
         sql = insert_array(sql)
         sql = convert_to_not_null(sql)

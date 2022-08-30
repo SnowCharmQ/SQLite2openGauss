@@ -62,7 +62,7 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
             continue
         sqls.append(sql)
         count += 1
-        if count == 100:
+        if count == 50:
             if is_record_sqls:
                 t = OpenGaussLogThread(opengauss, sqls, dbschema, error_log, sqls_log)
             else:

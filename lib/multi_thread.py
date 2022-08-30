@@ -109,20 +109,13 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
         conn_opengauss = opengauss.getconn()
         cursor_opengauss = conn_opengauss.cursor()
         cursor_opengauss.execute("set search_path to %s;" % dbschema)
-        triggers = cursor_sqlite.execute("select * from sqlite_master where type = 'trigger';")
-        for row in triggers:
-            trigger_name = row[1]
-            trigger_sql = row[4]
-            trigger_sql = decorator.remove_comment(trigger_sql)
-            function = decorator.trigger_to_function(trigger_name, trigger_sql)
-            function = decorator.remove_comment(function)
-            trigger = decorator.new_trigger(trigger_name, trigger_sql)
-            trigger = decorator.remove_comment(trigger)
-            cursor_opengauss.execute(function)
-            cursor_opengauss.execute(trigger)
+        indexes = cursor_sqlite.execute("select * from sqlite_master where type = 'index' and sql is not null;")
+        for row in indexes:
+            sql = row[4] + ";"
+            sql = decorator.remove_comment(sql)
+            cursor_opengauss.execute(sql)
             if is_record_sqls:
-                sqls_log.info(function)
-                sqls_log.info(trigger)
+                sqls_log.info(sql)
         conn_opengauss.commit()
     except Exception as e:
         error_log.error(e)
@@ -141,6 +134,31 @@ def multi_thread(opengauss_properties, sqlite_properties, error_log, info_log, s
             cursor_opengauss.execute(sql)
             if is_record_sqls:
                 sqls_log.info(sql)
+        conn_opengauss.commit()
+    except Exception as e:
+        error_log.error(e)
+    finally:
+        if conn_opengauss is not None:
+            opengauss.putconn(conn_opengauss)
+
+    try:
+        conn_opengauss = opengauss.getconn()
+        cursor_opengauss = conn_opengauss.cursor()
+        cursor_opengauss.execute("set search_path to %s;" % dbschema)
+        triggers = cursor_sqlite.execute("select * from sqlite_master where type = 'trigger';")
+        for row in triggers:
+            trigger_name = row[1]
+            trigger_sql = row[4]
+            trigger_sql = decorator.remove_comment(trigger_sql)
+            function = decorator.trigger_to_function(trigger_name, trigger_sql)
+            function = decorator.remove_comment(function)
+            trigger = decorator.new_trigger(trigger_name, trigger_sql)
+            trigger = decorator.remove_comment(trigger)
+            cursor_opengauss.execute(function)
+            cursor_opengauss.execute(trigger)
+            if is_record_sqls:
+                sqls_log.info(function)
+                sqls_log.info(trigger)
         conn_opengauss.commit()
     except Exception as e:
         error_log.error(e)

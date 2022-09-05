@@ -128,14 +128,14 @@ Python解释器版本为python3.9
 unzip OpenGauss-Project-main.zip
 ```
 
-<img src="https://i.imgur.com/VmxunGK.png" style="zoom:67%;" />
+![img](fig/fig1.png)
 
 进入文件夹
 ``` shell
 cd OpenGauss-Project-main
 ```
 
-<img src="https://i.imgur.com/XiO3XS5.png" style="zoom:67%;" />
+![img](fig/fig2.png)
 
 
 
@@ -149,29 +149,29 @@ cd OpenGauss-Project-main
 python main.py
 ```
 
-<img src="https://i.imgur.com/COO87dT.png" style="zoom:67%;" />
+![img](fig/fig3.png)
 
 
 
 输入openGauss数据库信息
 
-<img src="https://i.imgur.com/wJ90H7l.png" style="zoom:67%;" />
+![img](fig/fig4.png)
 
 保存信息至配置文件中
 
-<img src="https://i.imgur.com/8c6H6j3.png" style="zoom:67%;" />
+![img](fig/fig5.png)
 
 输入要迁移的SQLite数据库信息（注：输入的SQLite文件应在sqlite文件夹中）
 
-<img src="https://i.imgur.com/x58ygiM.png" style="zoom:67%;" />
+![img](fig/fig6.png)
 
 保存信息至配置文件中
 
-<img src="https://i.imgur.com/HwYBiXo.png" style="zoom:67%;" />
+![img](fig/fig7.png)
 
 数据迁移中以及迁移完毕
 
-<img src="https://i.imgur.com/t48m2bO.png" style="zoom:67%;" />
+![img](fig/fig8.png)
 
 
 
@@ -180,11 +180,11 @@ python main.py
 ``` shell
 python main.py -o opengauss.properties -s sqlite.properties
 ```
-<img src="https://i.imgur.com/hlJY5Dk.png" style="zoom:67%;" />
+![img](fig/fig9.png)
 
 数据迁移中以及迁移完毕
 
-<img src="https://i.imgur.com/Q0LwYiq.png" style="zoom:67%;" />
+![img](fig/fig10.png)
 
 
 
@@ -193,11 +193,11 @@ python main.py -o opengauss.properties -s sqlite.properties
 ```
 python main.py -o opengauss.properties -s sqlite.properties -m
 ```
-<img src="https://i.imgur.com/o5hmIxX.png" style="zoom:67%;" />
+![img](fig/fig11.png)
 
 数据迁移中以及迁移完毕
 
-<img src="https://i.imgur.com/xFac2f1.png" style="zoom:67%;" />
+![img](fig/fig12.png)
 
 
 
@@ -205,7 +205,7 @@ python main.py -o opengauss.properties -s sqlite.properties -m
 
 自动生成日志并进行分类管理
 
-<img src="https://i.imgur.com/0WFkfzj.png" style="zoom: 67%;" />
+![img](fig/fig13.png)
 
 **info.log**: 数据库连接提示日志，用于存储数据库连接的信息<br>
 **error.log**: 数据迁移错误信息日志，用于存储迁移过程中出现异常的提示信息<br>
@@ -217,7 +217,7 @@ python main.py -o opengauss.properties -s sqlite.properties -m
 
 
 
-#### <img src="https://i.imgur.com/EeHOeSU.png" style="zoom: 67%;" />
+#### ![img](fig/fig14.png)
 
 
 
@@ -226,7 +226,7 @@ python main.py -o opengauss.properties -s sqlite.properties -m
 
 #### 4.1 类型转换规则
 
-<img src="https://i.imgur.com/0Zzi4rx.png" style="zoom: 80%;" />
+![img](fig/fig15.png)
 **特殊说明**：在SQLite数据库中中文字符占varchar中的一个字符，但在openGauss数据库中中文字符占了varchar的三个字符，故而在迁移时对于varchar数据类型的长度限制为原来的三倍以适配迁移过程中可能出现的长度超出限制的情况。
 
 
